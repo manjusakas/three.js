@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 01.02 - First Scene</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<!-- three.js的容器 -->
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+
+  function init() {
+
+    var scene = new THREE.Scene();  // 1.场景
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    var renderer = new THREE.WebGLRenderer();   // 3.渲染器
+    renderer.setSize(window.innerWidth, window.innerHeight);    // 设置渲染器的大小为窗口的内宽度，也就是内容区的宽度
+    document.getElementById("WebGL-output").appendChild(renderer.domElement);
+  }
+  window.onload = init;
+
+</script>
+</body>
+</html>

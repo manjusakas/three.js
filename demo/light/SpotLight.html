@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 01.02 - add cube</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="Stats-output">
+</div>
+<!-- three.js的容器 -->
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+
+  var scene;
+  var camera;
+  var renderer;
+  var cube;
+  var plane;
+  var stats;
+  var controls;
+  var pointColor = "#ccffcc";
+  var spotLight;
+  var sphereLightMesh;
+  var step = 0;
+  var invert = 1;
+  var phase = 0;
+  function initStats() {
+
+    var stats = new Stats();
+    stats.setMode(0); // 0: fps, 1: ms
+    // Align top-left
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+    document.getElementById("Stats-output").appendChild(stats.domElement);
+    return stats;
+  }
+  function initScene() {
+    scene = new THREE.Scene();
+  }
+  function initCamera() {
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    camera.position.set(-30, 40, 30);
+    camera.lookAt(scene.position);
+  }
+  function initThree() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);    // 设置渲染器的大小为窗口的内宽度，也就是内容区的宽度
+    renderer.setClearColor(0xFFFFFF, 1.0);
+    renderer.shadowMapEnabled = true;
+    renderer.shadowMapType = THREE.PCFShadowMap;
+
+    document.getElementById('WebGL-output').appendChild(renderer.domElement);
+  }
+  function initObject() {
+    // create the ground plane
+    var planeGeometry = new THREE.PlaneGeometry(60, 30, 20, 20);
+    var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+    plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 5;
+    plane.position.y = 0;
+    plane.position.z = -5;
+
+    // add the plane to the scene
+    scene.add(plane);
+
+    var geometry = new THREE.BoxGeometry(5, 5, 5);
+    var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
+    cube = new THREE.Mesh(geometry, material);
+    cube.position.x = 10;
+    cube.position.y = 6;
+    cube.position.z = 0;
+    cube.castShadow = true;
+    scene.add(cube);
+
+  }
+  function initLight() {
+    // var ambiColor = "#1c1c1c";
+    // var ambientLight = new THREE.AmbientLight(ambiColor);
+    // scene.add(ambientLight);
+
+    spotLight = new THREE.SpotLight(pointColor);
+    spotLight.position.set(-40, 60, -10);
+    spotLight.castShadow = true;
+    spotLight.shadowCameraNear = 2;
+    spotLight.shadowCameraFar = 200;
+    spotLight.shadowCameraFov = 30;
+    spotLight.target = plane;
+    spotLight.distance = 0;
+    spotLight.angle = 0.4;
+    scene.add(spotLight);
+
+    var sphereLight = new THREE.SphereGeometry(0.2);
+    var sphereLightMaterial = new THREE.MeshBasicMaterial({color: 0xac6c25});
+    sphereLightMesh = new THREE.Mesh(sphereLight, sphereLightMaterial);
+    sphereLightMesh.castShadow = true;
+
+    sphereLightMesh.position = new THREE.Vector3(10, 20, 3);
+    scene.add(sphereLightMesh);
+  }
+  function initAxes() {
+    var axes = new THREE.AxisHelper(20);
+    scene.add(axes);
+  }
+  function handleGui() {
+    var controls = new function () {
+      this.pointColor = pointColor;
+      this.intensity = 1;
+      this.distance = 0;
+      this.exponent = 30;
+      this.angle = 0.1;
+      this.debug = false;
+      this.castShadow = true;
+      this.onlyShadow = false;
+      this.target = "Plane";
+    };
+
+    var gui = new dat.GUI();
+    gui.addColor(controls, 'pointColor').onChange(function (e) {
+      spotLight.color = new THREE.Color(e);
+    });
+
+    gui.add(controls, 'angle', 0, Math.PI * 2).onChange(function (e) {
+      spotLight.angle = e;
+    });
+
+    gui.add(controls, 'intensity', 0, 5).onChange(function (e) {
+      spotLight.intensity = e;
+    });
+
+    gui.add(controls, 'distance', 0, 200).onChange(function (e) {
+      spotLight.distance = e;
+    });
+
+    gui.add(controls, 'exponent', 0, 100).onChange(function (e) {
+      spotLight.exponent = e;
+    });
+
+    gui.add(controls, 'debug').onChange(function (e) {
+      spotLight.shadowCameraVisible = e;
+    });
+
+    gui.add(controls, 'castShadow').onChange(function (e) {
+      spotLight.castShadow = e;
+    });
+
+    gui.add(controls, 'onlyShadow').onChange(function (e) {
+      spotLight.onlyShadow = e;
+    });
+
+    gui.add(controls, 'target', ['Plane', 'Cube']).onChange(function (e) {
+      console.log(e);
+      switch (e) {
+          case "Plane":
+              spotLight.target = plane;
+              break;
+          case "Cube":
+              spotLight.target = cube;
+              break;
+      }
+
+    });
+  }
+  
+
+  function render() {
+    renderer.clear();
+    stats.update();
+
+    step += 0.02;
+    // cube.position.x = 20 + ( 10 * (Math.cos(step)));
+    // cube.position.y = 2 + ( 10 * Math.abs(Math.sin(step)));
+
+    if (phase > 2 * Math.PI) {
+        invert = invert * -1;
+        phase -= 2 * Math.PI;
+    } else {
+        phase += 0.02;
+    }
+    sphereLightMesh.position.z = +(7 * (Math.sin(phase)));
+    sphereLightMesh.position.x = +(14 * (Math.cos(phase)));
+    sphereLightMesh.position.y = 10;
+
+    if (invert < 0) {
+        var pivot = 14;
+        sphereLightMesh.position.x = (invert * (sphereLightMesh.position.x - pivot)) + pivot;
+    }
+    spotLight.position.copy(sphereLightMesh.position);
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
+  }
+  function threeStart() {
+    stats = initStats();
+    initScene();
+    initCamera();
+    initThree();
+    initObject();
+    initLight();
+    initAxes();
+    handleGui();
+    render();
+  }
+  window.onload = threeStart;
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener('resize', onResize, false);
+
+</script>
+</body>
+</html>

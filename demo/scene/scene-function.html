@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 01.02 - add cube</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="Stats-output">
+</div>
+<!-- three.js的容器 -->
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+
+  var scene;
+  var camera;
+  var renderer;
+  var cube;
+  var stats;
+  var controls;
+  function initStats() {
+
+    var stats = new Stats();
+    stats.setMode(0); // 0: fps, 1: ms
+    // Align top-left
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+    document.getElementById("Stats-output").appendChild(stats.domElement);
+    return stats;
+  }
+  function initScene() {
+    scene = new THREE.Scene();
+  }
+  function initCamera() {
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    camera.position.set(-30, 40, 30);
+    camera.lookAt(scene.position);
+  }
+  function initThree() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);    // 设置渲染器的大小为窗口的内宽度，也就是内容区的宽度
+    renderer.setClearColor(0xFFFFFF, 1.0);
+    
+    document.getElementById('WebGL-output').appendChild(renderer.domElement);
+  }
+  function initObject() {
+    var cubeSize = Math.ceil((Math.random() * 10));
+    var geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    var material = new THREE.MeshBasicMaterial({color: Math.random() * 0xffffff});
+    var cube = new THREE.Mesh(geometry, material);
+    cube.castShadow = true;
+    cube.name = "cube-" + scene.children.length;
+    cube.position.x = Math.round(Math.random() * 50);
+    cube.position.y = Math.round((Math.random() * 5));
+    cube.position.z = -20 + Math.round(Math.random() * 50);
+    scene.add(cube);
+    console.log('name:', cube.name);
+  }
+
+  function handleGui() {
+    controls = new function () {
+      this.addCube = function () {
+        initObject();
+      };
+      this.removeCube = function () {
+        var allChildren = scene.children;
+        var lastObject = allChildren[allChildren.length - 1];
+        if (lastObject instanceof THREE.Mesh) {
+          scene.remove(lastObject);
+        }
+      };
+      this.getObjectByName = function () {
+        console.log(scene.getObjectByName('cube-1'))
+      }
+    };
+    var gui = new dat.GUI();
+    gui.add(controls, 'addCube').name("添加物体");
+    gui.add(controls, 'removeCube').name("移除物体");
+    gui.add(controls, 'getObjectByName').name("按name查找");
+
+  }
+  
+
+  function render() {
+    renderer.clear();
+    stats.update();
+    
+    scene.traverse(function (e) {
+      if (e instanceof THREE.Mesh) {
+        //Mesh对象 是区分相机和光源对象的方法。--> if( lastObject instanceof THREE.Mesh )
+        e.rotation.x += 0.02;
+        e.rotation.y += 0.02;
+        e.rotation.z += 0.02;
+      }
+    });
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
+  }
+  function threeStart() {
+    stats = initStats();
+    initScene();
+    initCamera();
+    initThree();
+    // initObject();
+    handleGui();
+    render();
+  }
+  window.onload = threeStart;
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener('resize', onResize, false);
+
+</script>
+</body>
+</html>

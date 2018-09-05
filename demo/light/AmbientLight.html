@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 01.02 - add cube</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="Stats-output">
+</div>
+<!-- three.js的容器 -->
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+
+  var scene;
+  var camera;
+  var renderer;
+  var cube;
+  var stats;
+  var controls;
+  var ambiColor = "#0c0c0c";
+  var ambientLight;
+  function initStats() {
+
+    var stats = new Stats();
+    stats.setMode(0); // 0: fps, 1: ms
+    // Align top-left
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+    document.getElementById("Stats-output").appendChild(stats.domElement);
+    return stats;
+  }
+  function initScene() {
+    scene = new THREE.Scene();
+  }
+  function initCamera() {
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    camera.position.set(-30, 40, 30);
+    camera.lookAt(scene.position);
+  }
+  function initThree() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);    // 设置渲染器的大小为窗口的内宽度，也就是内容区的宽度
+    renderer.setClearColor(0xFFFFFF, 1.0);
+    // renderer.shadowMapEnabled = true;
+
+    document.getElementById('WebGL-output').appendChild(renderer.domElement);
+  }
+  function initObject() {
+    // create the ground plane
+    var planeGeometry = new THREE.PlaneGeometry(60, 30, 1, 1);
+    var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 15;
+    plane.position.y = 0;
+    plane.position.z = 0;
+
+    // add the plane to the scene
+    scene.add(plane);
+
+    var geometry = new THREE.BoxGeometry(10,10,10); 
+    var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
+    cube = new THREE.Mesh(geometry, material);
+    cube.position.y = 10;
+    // cube.castShadow = true;
+    scene.add(cube);
+  }
+  function initLight() {
+    
+    ambientLight = new THREE.AmbientLight(ambiColor);
+    scene.add(ambientLight);
+    //环境光不需要设置光源的位置等信息，只需要一个颜色即可，这个颜色就是漫反射到所有对象上的颜色
+  }
+  function handleGui() {
+    // controls = {
+    //   rotationSpeed: 0.02,
+    // }
+    controls = new function () {
+      this.ambientColor = ambiColor;
+    };
+    var gui = new dat.GUI();
+    gui.addColor(controls, 'ambientColor').onChange(function (e) {
+        ambientLight.color = new THREE.Color(e);
+    });
+  }
+  
+
+  function render() {
+    renderer.clear();
+    stats.update();
+    
+    cube.rotation.x += 0.02;
+    cube.rotation.y += 0.02;
+    cube.rotation.z += 0.02;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
+  }
+  function threeStart() {
+    stats = initStats();
+    initScene();
+    initCamera();
+    initThree();
+    initObject();
+    initLight();
+    handleGui();
+    render();
+  }
+  window.onload = threeStart;
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.addEventListener('resize', onResize, false);
+
+</script>
+</body>
+</html>
