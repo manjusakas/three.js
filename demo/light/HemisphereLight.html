@@ -7,6 +7,7 @@
     <script type="text/javascript" src="../libs/three.js"></script>
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -31,9 +32,10 @@
   var plane;
   var stats;
   var controls;
-  var pointColor = "#ffffff";
-  var spotLight;
+  var pointColor = "#ccffcc";
+  var directionalLight;
   var sphereLightMesh;
+  var hemiLight;
   var step = 0;
   var invert = 1;
   var phase = 0;
@@ -50,13 +52,12 @@
   }
   function initScene() {
     scene = new THREE.Scene();
+    scene.fog=new THREE.Fog(0xffffff,0.015,180);
   }
   function initCamera() {
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
-    camera.position.x=-20;
-    camera.position.y=40;
-    camera.position.z=30;
-    camera.lookAt(scene.position);
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    camera.position.set(-30, 40, 30);
+    camera.lookAt(new THREE.Vector3(10, 0, 0));
   }
   function initThree() {
     renderer = new THREE.WebGLRenderer();
@@ -70,136 +71,110 @@
   }
   function initObject() {
     // create the ground plane
-    var planeGeometry=new THREE.PlaneGeometry(60,20,5,5);//平面
-    //生成一个材质
-    var planeMaterial=new THREE.MeshLambertMaterial({color:0xffffff});
-    //生成一个网格，将平面和材质放在一个网格中，组合在一起，组成一个物体
-    plane=new THREE.Mesh(planeGeometry,planeMaterial);
-    plane.rotation.x=-0.5*Math.PI;//将平面沿着x轴进行旋转
-    plane.position.x=0;
-    plane.position.y=0;
-    plane.position.z=0;
-    plane.receiveShadow=true;//平面进行接受阴影
+    var planeGeometry = new THREE.PlaneGeometry(60, 30, 1, 1);
+    var planeMaterial = new THREE.MeshLambertMaterial({color: 0x3aed3a});
+    plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    // rotate and position the plane
+    plane.rotation.x = -0.5 * Math.PI;
+    plane.position.x = 0;
+    plane.position.y = 0;
+    plane.position.z = 0;
 
     // add the plane to the scene
     scene.add(plane);
 
-    var geometry = new THREE.BoxGeometry(5, 5, 5);
-    var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
-    cube = new THREE.Mesh(geometry, material);
-    cube.position.x = 5;
-    cube.position.y = 6;
-    cube.position.z = 0;
-    cube.castShadow = true;
-    scene.add(cube);
+    var sphereGeometry = new THREE.SphereGeometry(4, 25, 25);
+    var sphereMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+    var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+    // position the sphere
+    sphere.position.x = 0;
+    sphere.position.y = 5;
+    sphere.position.z = 0;
+    sphere.castShadow = true;
+
+    // add the sphere to the scene
+    scene.add(sphere);
 
   }
   function initLight() {
-    // var ambiColor = "#1c1c1c";
-    // var ambientLight = new THREE.AmbientLight(ambiColor);
-    // scene.add(ambientLight);
+    // 方向光源
+    directionalLight = new THREE.DirectionalLight(pointColor);
+    directionalLight.position.set(-40, 60, -10);
+    directionalLight.castShadow = true;
+    directionalLight.shadowCameraNear = 10;
+    directionalLight.shadowCameraFar = 40;
+    directionalLight.shadowCameraLeft = -10;
+    directionalLight.shadowCameraRight = 10;
+    directionalLight.shadowCameraTop = 10;
+    directionalLight.shadowCameraBottom = -10;
 
-    spotLight = new THREE.SpotLight(pointColor);
-    spotLight.position.set(0,20,0);
-    spotLight.castShadow=true;
-    spotLight.target=plane;//光源照射的方向
-    spotLight.angle=Math.PI/3;//光源的角度
-    spotLight.shadowCameraNear=2;
-    spotLight.shadowCameraFar=30;
-    spotLight.shadowCameraVisible=true;
-    scene.add(spotLight);
+    directionalLight.distance = 0;
+    directionalLight.intensity = 0.5;
+    directionalLight.shadowMapHeight = 1024;
+    directionalLight.shadowMapWidth = 1024;
+
+
+    scene.add(directionalLight);
 
     var sphereLight = new THREE.SphereGeometry(0.2);
     var sphereLightMaterial = new THREE.MeshBasicMaterial({color: 0xac6c25});
     sphereLightMesh = new THREE.Mesh(sphereLight, sphereLightMaterial);
     sphereLightMesh.castShadow = true;
 
-    sphereLightMesh.position.set(0,20,0);
+    sphereLightMesh.position = new THREE.Vector3(10, 20, 3);
     scene.add(sphereLightMesh);
+
+    //生成半球光源
+    hemiLight=new THREE.HemisphereLight(0x5656dc,0x00ff00,0.6);
+    hemiLight.position.set(0,500,0);
+    scene.add(hemiLight);
   }
   function initAxes() {
     var axes = new THREE.AxisHelper(20);
     scene.add(axes);
   }
   function handleGui() {
-    var controls = new function () {
-      this.pointColor = pointColor;
-      this.intensity = 2;
-      this.distance = 0;
-      this.exponent = 30;
-      this.angle = 0.1;
-      this.shadowCameraVisible = true;
-      this.castShadow = true;
-      this.target = "Plane";
+     var controls = new function () {
+        this.hemisphere = true;
+        this.color = 0x3aed3a;
+        this.skyColor = 0x5656dc;
+        this.intensity = 0.6;
+
     };
 
     var gui = new dat.GUI();
-    gui.addColor(controls, 'pointColor').onChange(function (e) {
-      spotLight.color = new THREE.Color(e);
-    });
 
-    gui.add(controls, 'angle', 0, Math.PI * 2).onChange(function (e) {
-      spotLight.angle = e;
+    gui.add(controls, 'hemisphere').onChange(function (e) {
+        if (!e) {
+            hemiLight.intensity = 0;
+        } else {
+            hemiLight.intensity = controls.intensity;
+        }
     });
-
+    gui.addColor(controls, 'color').onChange(function (e) {
+        hemiLight.groundColor = new THREE.Color(e);
+    });
+    gui.addColor(controls, 'skyColor').onChange(function (e) {
+        hemiLight.color = new THREE.Color(e);
+    });
     gui.add(controls, 'intensity', 0, 5).onChange(function (e) {
-      spotLight.intensity = e;
-    });
-
-    gui.add(controls, 'distance', 0, 200).onChange(function (e) {
-      spotLight.distance = e;
-    });
-
-    gui.add(controls, 'exponent', 0, 100).onChange(function (e) {
-      spotLight.exponent = e;
-    });
-
-    gui.add(controls, 'shadowCameraVisible').onChange(function (e) {
-      spotLight.shadowCameraVisible = e;
-    });
-
-    gui.add(controls, 'castShadow').onChange(function (e) {
-      spotLight.castShadow = e;
-    });
-
-    gui.add(controls, 'target', ['Plane', 'Cube']).onChange(function (e) {
-      console.log(e);
-      switch (e) {
-          case "Plane":
-              spotLight.target = plane;
-              break;
-          case "Cube":
-              spotLight.target = cube;
-              break;
-      }
-
+        hemiLight.intensity = e;
     });
   }
   
-
   function render() {
     renderer.clear();
     stats.update();
 
     step += 0.02;
-    cube.position.x = 10 + ( 4 * (Math.cos(step)));
-    cube.position.y = 2 + ( 4 * Math.abs(Math.sin(step)));
+    sphereLightMesh.position.z = -8;
+    sphereLightMesh.position.y = +(27 * (Math.sin(step / 3)));
+    sphereLightMesh.position.x = 10 + (26 * (Math.cos(step / 3)));
 
-    if (phase > 2 * Math.PI) {
-        invert = invert * -1;
-        phase -= 2 * Math.PI;
-    } else {
-        phase += 0.02;
-    }
-    // sphereLightMesh.position.z = +(7 * (Math.sin(phase)));
-    // sphereLightMesh.position.x = +(14 * (Math.cos(phase)));
-    // sphereLightMesh.position.y = 10;
-
-    // if (invert < 0) {
-    //     var pivot = 14;
-    //     sphereLightMesh.position.x = (invert * (sphereLightMesh.position.x - pivot)) + pivot;
-    // }
-    // spotLight.position.copy(sphereLightMesh.position);
+    directionalLight.position.copy(sphereLightMesh.position);
     renderer.render(scene, camera);
     requestAnimationFrame(render);
   }

@@ -23,7 +23,6 @@
 </div>
 
 <script type="text/javascript">
-
   var scene;
   var camera;
   var renderer;
@@ -34,6 +33,7 @@
   var pointColor = "#ccffcc";
   var directionalLight;
   var sphereLightMesh;
+  var lensFlare;
   var step = 0;
   var invert = 1;
   var phase = 0;
@@ -53,29 +53,31 @@
   }
   function initCamera() {
     camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
-    camera.position.set(-30, 40, 30);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    camera.position.x = -20;
+    camera.position.y = 15;
+    camera.position.z = 45;
+    camera.lookAt(new THREE.Vector3(10, 0, 0));
   }
   function initThree() {
-    renderer = new THREE.WebGLRenderer();
 
-    renderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
+    // antialias: 是否开启反锯齿，设置为true开启反锯齿。alpha: 是否可以设置背景色透明。
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});  // alpha: true 是加眩光的重点
+    renderer.setClearColor(new THREE.Color(0xaaaaff, 1.0));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMapEnabled = true;
-    renderer.shadowMapType = THREE.PCFShadowMap;
 
     document.getElementById('WebGL-output').appendChild(renderer.domElement);
   }
   function initObject() {
     // create the ground plane
-    var planeGeometry = new THREE.PlaneGeometry(60, 30, 1, 1);
+    var planeGeometry = new THREE.PlaneGeometry(160, 130, 1, 1);
     var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
     plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.receiveShadow = true;
 
     // rotate and position the plane
     plane.rotation.x = -0.5 * Math.PI;
-    plane.position.x = 10;
+    plane.position.x = 0;
     plane.position.y = 0;
     plane.position.z = 0;
 
@@ -93,12 +95,17 @@
 
   }
   function initLight() {
-    // var ambiColor = "#1c1c1c";
-    // var ambientLight = new THREE.AmbientLight(ambiColor);
-    // scene.add(ambientLight);
+    var ambiColor = "#1c1c1c";
+    var ambientLight = new THREE.AmbientLight(ambiColor);
+    scene.add(ambientLight);
+    // add spotlight for a bit of light
+    var spotLight0 = new THREE.SpotLight(0xcccccc);
+    spotLight0.position.set(-40, 60, -10);
+    spotLight0.lookAt(plane);
+    // scene.add(spotLight0);
 
     directionalLight = new THREE.DirectionalLight(pointColor);
-    directionalLight.position.set(-40, 60, -10);
+    directionalLight.position.set(10, 20, 3);
     directionalLight.castShadow = true;
     directionalLight.shadowCameraNear = 10;
     directionalLight.shadowCameraFar = 40;
@@ -112,66 +119,25 @@
     directionalLight.shadowMapHeight = 1024;
     directionalLight.shadowMapWidth = 1024;
 
-
     scene.add(directionalLight);
 
-    var sphereLight = new THREE.SphereGeometry(0.2);
-    var sphereLightMaterial = new THREE.MeshBasicMaterial({color: 0xac6c25});
-    sphereLightMesh = new THREE.Mesh(sphereLight, sphereLightMaterial);
-    sphereLightMesh.castShadow = true;
-
-    sphereLightMesh.position = new THREE.Vector3(10, 20, 3);
-    scene.add(sphereLightMesh);
+    // LensFlare眩光
+    var textureFlare0 = THREE.ImageUtils.loadTexture("./lensflare0.png");
+    var textureFlare3 = THREE.ImageUtils.loadTexture("./lensflare3.png");
+    var flareColor = new THREE.Color(0xffaacc);
+    /*参数1：纹理，眩光的材质
+        参数2：尺寸，眩光的大小，-1的话就是使用材质本身大小
+        参数3：距离，光源(0)到相机(1)的距离
+        参数4：融合，//当眩光有多种材质的时候，这些材质如何融合在一起
+        参数5：颜色，眩光的颜色*/
+    lensFlare = new THREE.LensFlare(textureFlare0, 350, 0.0, THREE.AdditiveBlending, flareColor);
+    lensFlare.add(textureFlare3, 60, 0.6, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 0.7, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 120, 0.9, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 1.0, THREE.AdditiveBlending);
+    lensFlare.position.copy(directionalLight.position);
+    scene.add(lensFlare);
   }
-  function initAxes() {
-    var axes = new THREE.AxisHelper(20);
-    scene.add(axes);
-  }
-  function handleGui() {
-    var controls = new function () {
-      this.intensity = 2;
-      this.distance = 0;
-      this.angle = 0.1;
-      this.shadowCameraVisible = false;
-      this.castShadow = true;
-      this.target = "Plane";
-    };
-
-    var gui = new dat.GUI();
-    gui.add(controls, 'angle', 0, Math.PI * 2).onChange(function (e) {
-      directionalLight.angle = e;
-    });
-
-    gui.add(controls, 'intensity', 0, 5).onChange(function (e) {
-      directionalLight.intensity = e;
-    });
-
-    gui.add(controls, 'distance', 0, 200).onChange(function (e) {
-      directionalLight.distance = e;
-    });
-    gui.add(controls, 'shadowCameraVisible').onChange(function (e) {
-      directionalLight.shadowCameraVisible = e;
-    });
-
-    gui.add(controls, 'castShadow').onChange(function (e) {
-      directionalLight.castShadow = e;
-    });
-
-    gui.add(controls, 'target', ['Plane', 'Cube']).onChange(function (e) {
-      console.log(e);
-      switch (e) {
-          case "Plane":
-              directionalLight.target = plane;
-              break;
-          case "Cube":
-              directionalLight.target = cube;
-              break;
-      }
-
-    });
-  }
-  
-
   function render() {
     renderer.clear();
     stats.update();
@@ -180,11 +146,11 @@
     // cube.position.x = 20 + ( 10 * (Math.cos(step)));
     // cube.position.y = 2 + ( 10 * Math.abs(Math.sin(step)));
 
-    sphereLightMesh.position.z = -8;
-    sphereLightMesh.position.y = +(27 * (Math.sin(step / 3)));
-    sphereLightMesh.position.x = 10 + (26 * (Math.cos(step / 3)));
+    directionalLight.position.z = -8;
+    directionalLight.position.y = +(27 * (Math.sin(step / 3)));
+    directionalLight.position.x = 10 + (26 * (Math.cos(step / 3)));
 
-    directionalLight.position.copy(sphereLightMesh.position);
+    lensFlare.position.copy(directionalLight.position);
     renderer.render(scene, camera);
     requestAnimationFrame(render);
   }
@@ -195,17 +161,10 @@
     initThree();
     initObject();
     initLight();
-    initAxes();
-    handleGui();
     render();
   }
   window.onload = threeStart;
-  function onResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-  window.addEventListener('resize', onResize, false);
+
 
 </script>
 </body>

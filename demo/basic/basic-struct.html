@@ -39,26 +39,27 @@
     renderer.setClearColor(0xFFFFFF, 1.0);
     
     document.getElementById('WebGL-output').appendChild(renderer.domElement);
+    // renderer.render(scene, camera);
   }
   function initObject() {
-    var geometry = new THREE.BoxGeometry(10,10,10); 
-    var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+    var geometry = new THREE.BoxGeometry(10,10,10);  //模型
+    var material = new THREE.MeshBasicMaterial({color: 0x00ffff}); // 材质
     cube = new THREE.Mesh(geometry, material); 
     scene.add(cube);
   }
   function render()
   {
-    renderer.clear();
     cube.rotation.x += 0.1;
     cube.rotation.y += 0.1;
-    renderer.render(scene, camera);
+    
+    renderer.render(scene, camera); // 用render渲染场景和相机
     requestAnimationFrame(render);
   }
   function threeStart() {
     initScene();
     initCamera();
-    initThree();
     initObject();
+    initThree();
     render();
   }
   function onResize() {
