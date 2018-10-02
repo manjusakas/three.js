@@ -89,6 +89,7 @@
     pointLight = new THREE.PointLight(pointColor);
     pointLight.distance = 100;//距离，决定了光线可以照射多远
     pointLight.intensity = 1;//强度
+    //pointLight.decay = 20;
     scene.add(pointLight);
 
     var sphereLight = new THREE.SphereGeometry(0.2);

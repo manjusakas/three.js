@@ -7,6 +7,8 @@
     <script type="text/javascript" src="../libs/three.js"></script>
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -30,6 +32,8 @@
   var cube;
   var stats;
   var controls;
+  var orbitControls;
+  var clock;
   function initStats() {
 
     var stats = new Stats();
@@ -88,7 +92,7 @@
 
         cube.position.z = -(planeHeight / 2) + 2 + (j * 5);
         cube.position.x = -(planeWidth / 2) + 2 + (i * 5);
-        cube.position.y = 2;
+        cube.position.y = -2;
 
         scene.add(cube);
       }
@@ -119,7 +123,11 @@
     gui.add(controls, 'filmOffset', 0, 2000);
 
   }
-
+  function mouseController() {
+    orbitControls = new THREE.OrbitControls(camera);
+    //orbitControls.autoRotate = true;
+    clock = new THREE.Clock();
+  }
   function render() {
     renderer.clear();
     stats.update();
@@ -133,6 +141,10 @@
     camera.filmGauge = controls.filmGauge;
     camera.filmOffset = controls.filmOffset;
     camera.updateProjectionMatrix(); //改变fov值，并更新场景的渲染
+
+    var delta = clock.getDelta();
+    orbitControls.update(delta);
+
     renderer.render(scene, camera);
     requestAnimationFrame(render);
   }
@@ -145,7 +157,7 @@
     initThree();
     initAxes();
     initObject();
-    
+    mouseController();
     render();
   }
   window.onload = threeStart;
