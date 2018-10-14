@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 01.02 - add cube</title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<!-- three.js的容器 -->
+<div id="WebGL-output">
+</div>
+
+<script type="text/javascript">
+
+  var scene;
+  var camera;
+  var renderer;
+  var orbitControls;
+  var clock;
+  var controls;
+  var mesh;
+  function initScene() {
+    scene = new THREE.Scene();
+  }
+  function initCamera() {
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);// 2.透视相机
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 20;
+    camera.lookAt(scene.position);
+  }
+  function initThree() {
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);    // 设置渲染器的大小为窗口的内宽度，也就是内容区的宽度
+    renderer.setClearColor(0xFFFFFF, 1.0);
+    renderer.render(scene, camera);
+    document.getElementById('WebGL-output').appendChild(renderer.domElement);
+    
+  }
+  function initAxes() {
+    var axes = new THREE.AxisHelper(20);
+    scene.add(axes);
+  }
+  function mouseController() {
+    orbitControls = new THREE.OrbitControls(camera);
+    //orbitControls.autoRotate = true;
+    clock = new THREE.Clock();
+  }
+  function initLight() {
+    // add subtle ambient lighting
+    // var ambientLight = new THREE.AmbientLight(0x090909);
+    // scene.add(ambientLight);
+
+    // add spotlight for the shadows
+    var spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(-40, 40, 50);
+    scene.add(spotLight);
+  }
+  function gui() {
+    controls = new function () {
+
+      this.amount = 2;
+      this.bevelThickness = 2;
+      this.bevelSize = 0.5;
+      this.bevelEnabled = true;
+      this.bevelSegments = 3;
+      this.bevelEnabled = true;
+      this.curveSegments = 12;
+      this.steps = 1;
+    };
+    var gui = new dat.GUI();
+    gui.add(controls, 'amount', 0, 20).onChange(draw);
+    gui.add(controls, 'bevelThickness', 0, 10).onChange(draw);
+    gui.add(controls, 'bevelSize', 0, 10).onChange(draw);
+    gui.add(controls, 'bevelSegments', 0, 30).step(1).onChange(draw);
+    gui.add(controls, 'bevelEnabled').onChange(draw);
+    gui.add(controls, 'curveSegments', 1, 30).step(1).onChange(draw);
+    gui.add(controls, 'steps', 1, 5).step(1).onChange(draw);
+
+  }
+  function initObject() {
+    var x = 0, y = 0;
+    var radius = 12;
+    var shape = new THREE.Shape();
+    shape.moveTo(x, y);
+    shape.bezierCurveTo(x, y+radius, x+radius, y+radius, x+radius, 0 );
+    shape.bezierCurveTo(x+radius, y-radius, x, y-radius, x, y);
+
+    var eye1 = new THREE.Path();
+    eye1.absellipse(x+3, y+2, 2, 2, 0, Math.PI * 2, true);
+    shape.holes.push(eye1);
+
+    var eye2 = new THREE.Path();
+    eye2.absellipse(x+9, y+2, 2, 2, 0, Math.PI * 2, true);
+    shape.holes.push(eye2);
+
+    var mouse = new THREE.Path();
+    mouse.absarc(x+6, y-5, 2, 0, Math.PI, true);
+    shape.holes.push(mouse);
+
+    return shape;
+  }
+
+  function draw() {
+    scene.remove(mesh);
+    // create a new one
+
+    var options = {
+        amount: controls.amount,
+        bevelThickness: controls.bevelThickness,
+        bevelSize: controls.bevelSize,
+        bevelSegments: controls.bevelSegments,
+        bevelEnabled: controls.bevelEnabled,
+        curveSegments: controls.curveSegments,
+        steps: controls.steps
+    };
+
+    var geometry = new THREE.ExtrudeGeometry( initObject(), options );
+    //var geometry = new THREE.ShapeGeometry( shape );
+    var material = new THREE.MeshNormalMaterial({
+                shading: THREE.FlatShading,
+                transparent: true,
+                opacity: 0.7
+            });
+    mesh = new THREE.Mesh( geometry, material ) ;
+
+    scene.add(mesh);
+  }
+  function render()
+  {
+    
+    var delta = clock.getDelta();
+    orbitControls.update(delta);
+
+    renderer.render(scene, camera); // 用render渲染场景和相机
+    requestAnimationFrame(render);
+  }
+  function threeStart() {
+    initScene();
+    initCamera();
+    initLight();
+    initAxes();
+    gui();
+    draw();
+    initThree();
+    mouseController();
+    render();
+  }
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  window.onload = threeStart;
+  window.addEventListener('resize', onResize, false);
+
+</script>
+</body>
+</html>
