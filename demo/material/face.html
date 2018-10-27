@@ -70,61 +70,19 @@
     spotLight.position.set(-100, 100, 100);
     scene.add(spotLight);
   }
-  function getMaterials() {
-    var materials = [];
-    materials.push( new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) ); //不会对光源有任何的反应，只会使用指定的颜色来渲染物体
-    materials.push( new THREE.MeshBasicMaterial( { color: 0xffaa00, wireframe: true } ) ); //渲染几何体为线条
-    materials.push( new THREE.MeshBasicMaterial( { color: 0xffaa00, transparent: true, blending: THREE.AdditiveBlending } ) );
-
-    materials.push( new THREE.MeshDepthMaterial() ); //使用从摄像机到物体的距离来给网格上色;白色最近的，黑色最远的 
-    materials.push( new THREE.MeshNormalMaterial() ); //将法向量映射到RGB颜色的材料
-
-    materials.push( new THREE.MeshLambertMaterial( { color: 0xdddddd } ) ); //用于暗淡的不光亮的物体(漫反射) 
-    materials.push( new THREE.MeshPhongMaterial( {
-      color: 0xdddddd,
-      specular: 0x009900,
-      shininess: 10,
-      flatShading: true 
-    } ) ); //有镜面高光的有光泽的材料(镜面反射) 
-
-    materials.push( new THREE.MeshStandardMaterial({
-      metalness: 0.5,
-      roughness: 0.5,
-      color: new THREE.Color().setHSL( 1.0, 0.5, 1.0 * 0.5 + 0.1 ),
-    }) ); //这种材料多像金属
-
-
-    return materials;
-  }
-  function addLabel( name, location ) {
-    var textGeo = new THREE.TextGeometry( name, {
-      font: 'helvetiker',
-      size: 2,
-      height: 1,
-      // weight: 'normal',
-      // curveSegments: 0,
-      // bevelThickness: 0,
-      // bevelSize: 0,
-      // bevelSegments: 0,
-      // bevelEnabled: false,
-      // steps: 1
-    });
-    var textMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
-    var textMesh = new THREE.Mesh( textGeo, textMaterial );
-    textMesh.position.copy( location );
-    textMesh.position.x = textMesh.position.x + 12;
-    scene.add( textMesh );
-  }
   function initObject() {
-    materials = getMaterials();
-    var geometry = new THREE.SphereGeometry( 10, 32, 16 );
-    for ( var i = 0, l = materials.length; i < l; i ++ ) {
-      let mesh = new THREE.Mesh(geometry, materials[i]);
-      mesh.position.x = Math.floor( i / 3 ) * 60 -60;
-      mesh.position.z = -Math.floor( i % 3 ) * 60 + 60;
-      //addLabel( mesh.material.type, mesh.position);
-      scene.add(mesh);
-    }
+    var geometry = new THREE.BoxGeometry( 10, 10, 10 );
+    var mats = [];
+    mats.push(new THREE.MeshBasicMaterial({color: 0x009e60}));
+    mats.push(new THREE.MeshBasicMaterial({color: 0x0051ba}));
+    mats.push(new THREE.MeshBasicMaterial({color: 0xffd500}));
+    mats.push(new THREE.MeshBasicMaterial({color: 0xff5800}));
+    mats.push(new THREE.MeshBasicMaterial({color: 0xC41E3A}));
+    mats.push(new THREE.MeshBasicMaterial({color: 0xffffff}));
+    
+    var faceMaterial = new THREE.MeshFaceMaterial(mats);
+    let mesh = new THREE.Mesh(geometry, faceMaterial);
+    scene.add(mesh);
   }
 
   function render()
@@ -142,7 +100,6 @@
     initLight();
     initAxes();
     initObject();
-    // addLabel( "+roughness", new THREE.Vector3(0,0,0));
     initThree();
     mouseController();
     render();
